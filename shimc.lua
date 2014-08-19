@@ -16,23 +16,21 @@ function lines_from(file)
 	return lines
 end
 
-
-local file = 'conf.exe'
+--Read conf file
+local file = 'conf.exe' --Text file containing the URL, SSL URL, user and password like this
+--[[
+http://www.myserver.org:00000
+https://www.myserver.org:00001
+myuser
+mypassword
+]]
 local lines = lines_from(file)
 local sdburl = lines[1]
 local sdburls = lines[2]
 local user = lines[3]
 local password = lines[4]
 
-
-
-print(sdburl)
-print(sdburls)
-print(user)
-print(password)
-
-
-
+--Query setup
 local auth = ""
 local sid = ""
 local query = "list('functions')"
@@ -73,19 +71,4 @@ print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
 print(logout(sdburls, auth))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
