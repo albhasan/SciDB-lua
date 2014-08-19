@@ -17,7 +17,7 @@ function lines_from(file)
 end
 
 --Read conf file
-local file = 'conf.exe' --Text file containing the URL, SSL URL, user and password like this
+local file = 'conf.exe' --Text file containing the URL, SSL URL, user and password like this (without the comment marks):
 --[[
 http://www.myserver.org:00000
 https://www.myserver.org:00001
@@ -43,7 +43,7 @@ local filepath = ""
 print("\n", "-----------------------")
 print("\n", "TEST NO AUTHENTICATION")
 print("\n", "-----------------------")
-print("\n", "Loggin in...")
+print("\n", "Starting a new session...")
 sid = tonumber(newsession(sdburl))--TODO: Really weird casting, without casting it introduces a CR in the URL. Solve it using C
 print("\n", sid)
 print("\n", "Executing query...")
@@ -73,3 +73,4 @@ print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
 print(logout(sdburls, auth))
 
+--TODO: TEST cancel, read_bytes, upload_file
