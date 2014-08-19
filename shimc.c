@@ -1,11 +1,14 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 
 /*
@@ -37,12 +40,11 @@ static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *da
 void callOperation(lua_State *L, const char *url, const char *operation, const char *parameters[], int paramsize)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
-	CURL * myHandle;
+	CURL * curl;
 	CURLcode result;
 	struct BufferStruct output;
 	output.buffer = NULL;
 	output.size = 0;
-	myHandle = curl_easy_init() ;
 
 	const char *query = "?";
 	const char *equal = "=";
@@ -72,33 +74,97 @@ void callOperation(lua_State *L, const char *url, const char *operation, const c
 				strncat(aUrl, amp, sizeof(amp) / sizeof(amp[0]));
 		}
 	}
-
-	curl_easy_setopt(myHandle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-	curl_easy_setopt(myHandle, CURLOPT_WRITEDATA, (void *)&output);
-	curl_easy_setopt(myHandle, CURLOPT_URL, aUrl);
-	//TODO: This is I.N.S.E.C.U.R.E!
-	curl_easy_setopt(myHandle, CURLOPT_SSL_VERIFYPEER, 0);
-	curl_easy_setopt(myHandle, CURLOPT_SSL_VERIFYHOST, 0);
 	
-	result = curl_easy_perform( myHandle );
-	if(result == CURLE_OK)
-	{
-		if( output.buffer )
+	curl = curl_easy_init();
+	if(curl){
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&output);
+		curl_easy_setopt(curl, CURLOPT_URL, aUrl);
+		//TODO: This is I.N.S.E.C.U.R.E!
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+		
+		result = curl_easy_perform(curl);
+		if(result == CURLE_OK)
 		{
-			lua_pushstring(L, output.buffer);
+			if( output.buffer )
+			{
+				lua_pushstring(L, output.buffer);
+			}
+		}
+		else
+		{
+			lua_pushstring(L, curl_easy_strerror(result));
+		}
+		curl_easy_cleanup(curl);
+		if(output.buffer)
+		{
+			free ( output.buffer );
+			output.buffer = 0;
+			output.size = 0;
 		}
 	}
 	else
 	{
-		lua_pushstring(L, curl_easy_strerror(result));
+		lua_pushstring(L, "ERROR: CURL initialization failed");
+		return;
 	}
-	curl_easy_cleanup( myHandle );	
-	if( output.buffer )
+}
+
+
+void callOperationUpload(lua_State *L, const char *url, const char *filepath, const char *parameters[], int paramsize)
+{
+	char aUrl[1000000];
+	const char *aOperation = "/upload_file";
+	strcpy(aUrl, url);
+	strncat(aUrl, aOperation, sizeof(aOperation) / sizeof(aOperation[0]));
+
+	CURL * curl;
+	CURLcode result;
+
+	struct stat file_info;
+	double speed_upload;
+	double total_time;
+	FILE *fd;
+	
+	fd = fopen(filepath, "rb");
+	if(!fd)
 	{
-		free ( output.buffer );
-		output.buffer = 0;
-		output.size = 0;
-	}	
+		lua_pushstring(L, "ERROR: File not found");
+		return;
+	}
+	//Get file size
+	if(fstat(fileno(fd), &file_info) != 0)
+	{
+		lua_pushstring(L, "ERROR: File information unavailable");
+		return;
+	}
+
+	curl = curl_easy_init();
+	if(curl){
+		/* upload to this place */ 
+		curl_easy_setopt(curl, CURLOPT_URL, aUrl);
+		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+		curl_easy_setopt(curl, CURLOPT_READDATA, fd); //set where to read from (on Windows you need to use READFUNCTION too)
+		curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);//Give the size of the upload (optional)
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);//enable verbose for easier tracing
+		result = curl_easy_perform(curl);
+		if(result == CURLE_OK) {
+			curl_easy_getinfo(curl, CURLINFO_SPEED_UPLOAD, &speed_upload);
+			curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
+			lua_pushstring(L, filepath);
+		}
+		else
+		{
+			lua_pushstring(L, curl_easy_strerror(result));
+		}
+		curl_easy_cleanup(curl);
+	}
+	else
+	{
+		lua_pushstring(L, "ERROR: CURL initialization failed");
+		return;
+	}
 }
 
 
@@ -332,8 +398,58 @@ static int readbytes(lua_State *L){
 	return res;
 }
 
+static int cancel(lua_State *L){ 
+	int res = 0;
+	int paramCount = 2;
+	const char *url = lua_tostring(L, 1);
+	const char *id = lua_tostring(L, 2);
+	const char *auth = lua_tostring(L, 3);
 
+	if(url != NULL && id != NULL)
+	{
+		const char *parameters[4];
+		parameters[0] = "id";
+		parameters[1] = id;
+		parameters[2] = NULL;
+		parameters[3] = NULL;
+		if(auth != NULL)
+		{
+			parameters[2] = "auth";
+			parameters[3] = auth;
+			paramCount = 4;
+		}
+		callOperation(L, url, "/cancel", parameters, paramCount);
+		res = 1;
+	}
+	return res;
+}
 
+static int uploadfile(lua_State *L){ 
+	int res = 0;
+	int paramCount = 2;
+	const char *url = lua_tostring(L, 1);
+	const char *id = lua_tostring(L, 2);
+	const char *filepath = lua_tostring(L, 3);
+	const char *auth = lua_tostring(L, 4);
+
+	if(url != NULL && id != NULL && filepath != NULL)
+	{
+		const char *parameters[4];
+		parameters[0] = "id";
+		parameters[1] = id;
+		parameters[2] = NULL;
+		parameters[3] = NULL;
+		if(auth != NULL)
+		{
+			parameters[2] = "auth";
+			parameters[3] = auth;
+			paramCount = 4;
+		}
+		callOperationUpload(L, url, filepath, parameters, paramCount);
+		res = 1;
+	}
+	return res;
+}
 
 
 /*
@@ -346,33 +462,6 @@ for(i = 0; i < paramCount; i = i + 2)
 	printf("%s", parameters[i + 1]);
 }
 */
-
-
-
-
-
-
-static int cancel(lua_State *L){ 
-	const char *url = lua_tostring(L, -1);
-	//printf(url);
-	lua_pushstring(L, url);
-	return 1;
-}
-
-
-
-
-
-
-
-static int uploadfile(lua_State *L){ 
-	const char *url = lua_tostring(L, -1);
-	//printf(url);
-	lua_pushstring(L, url);
-	return 1;
-}
-
-
 
 
 int luaopen_shimclient(lua_State *L){
@@ -388,4 +477,3 @@ int luaopen_shimclient(lua_State *L){
 	lua_register(L,"logout", logout);
 	return 0;
 }
-

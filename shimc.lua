@@ -38,6 +38,7 @@ local save = "dcsv"
 local release = nil
 local stream = nil
 local n = 10
+local filepath = ""
 
 print("\n", "-----------------------")
 print("\n", "TEST NO AUTHENTICATION")
