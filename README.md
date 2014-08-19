@@ -14,7 +14,7 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
 </ul> 
 
 <h3>COMPILE</h3>
-<code>gcc -Wall -shared -fPIC -o shimclient.so -I/usr/include/lua -llua  shimc.c -lcurl</code>
+<code>gcc -Wall -shared -fPIC -o shimclient.so -I/usr/include/lua -llua  shimc.c -lcurl -I.</code>
 
 <h3>RUN</h3>
 <code>lua shimc.lua</code>
