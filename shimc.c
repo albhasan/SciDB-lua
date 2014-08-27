@@ -17,11 +17,48 @@
 *	******************************************
 */
 
+
+
+void buildUrl(const char *url, const char *operation, const char *parameters[], int paramsize, char *result){
+	const char *query = "?";
+	const char *equal = "=";
+	const char *amp = "&";
+	//char result[10000];
+	char aOperation[100];
+	strcpy(result, url);
+	strcpy(aOperation, operation);
+	strncat(result, aOperation, sizeof(aOperation) / sizeof(aOperation[0]));
+
+	int i = 0;
+	for (i = 0; i < paramsize; i++)
+	{
+		if(i == 0)
+			strncat(result, query, sizeof(query) / sizeof(query[0]));
+		char aParameter[10000];
+		strcpy(aParameter, parameters[i]);
+		strncat(result, aParameter, sizeof(aParameter) / sizeof(aParameter[0]));
+		if(i % 2 == 0)
+		{
+			strncat(result, equal, sizeof(equal) / sizeof(equal[0]));
+		}
+		else
+		{
+			if(i != paramsize - 1)
+				strncat(result, amp, sizeof(amp) / sizeof(amp[0]));
+		}
+	}
+	//return result;
+}
+
+
+
 struct BufferStruct
 {
 	char * buffer;
 	size_t size;
 };
+
+
 
 static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -37,6 +74,7 @@ static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *da
 }
 
 
+
 void callOperation(lua_State *L, const char *url, const char *operation, const char *parameters[], int paramsize)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -46,41 +84,15 @@ void callOperation(lua_State *L, const char *url, const char *operation, const c
 	output.buffer = NULL;
 	output.size = 0;
 
-	const char *query = "?";
-	const char *equal = "=";
-	const char *amp = "&";
-	
-	char aUrl[1000000];
-	char aOperation[100];
+	char aUrl[10000];
+	buildUrl(url, operation, parameters, paramsize, aUrl);
 
-	strcpy(aUrl, url);
-	strcpy(aOperation, operation);
-	strncat(aUrl, aOperation, sizeof(aOperation) / sizeof(aOperation[0]));
-	int i = 0;
-	for (i = 0; i < paramsize; i++)
-	{
-		if(i == 0)
-			strncat(aUrl, query, sizeof(query) / sizeof(query[0]));
-		char aParameter[10000];
-		strcpy(aParameter, parameters[i]);
-		strncat(aUrl, aParameter, sizeof(aParameter) / sizeof(aParameter[0]));
-		if(i % 2 == 0)
-		{
-			strncat(aUrl, equal, sizeof(equal) / sizeof(equal[0]));
-		}
-		else
-		{
-			if(i != paramsize - 1)
-				strncat(aUrl, amp, sizeof(amp) / sizeof(amp[0]));
-		}
-	}
-	
 	curl = curl_easy_init();
 	if(curl){
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&output);
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		curl_easy_setopt(curl, CURLOPT_URL, aUrl);
-		//TODO: This is I.N.S.E.C.U.R.E!
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 		
@@ -112,53 +124,76 @@ void callOperation(lua_State *L, const char *url, const char *operation, const c
 }
 
 
+
 void callOperationUpload(lua_State *L, const char *url, const char *filepath, const char *parameters[], int paramsize)
 {
-	char aUrl[1000000];
-	const char *aOperation = "/upload_file";
-	strcpy(aUrl, url);
-	strncat(aUrl, aOperation, sizeof(aOperation) / sizeof(aOperation[0]));
-
-	CURL * curl;
+	struct stat file_info;
+	struct curl_httppost *formpost = NULL;
+	struct curl_httppost *lastptr = NULL;
+	struct BufferStruct output;
+	output.buffer = NULL;
+	output.size = 0;
+	
+	curl_global_init(CURL_GLOBAL_ALL);
+	CURL *curl;
 	CURLcode result;
 
-	struct stat file_info;
-	double speed_upload;
-	double total_time;
+	char aUrl[10000];	
+	const char *operation = "/upload_file";
+	buildUrl(url, operation, parameters, paramsize, aUrl);
+
 	FILE *fd;
-	
 	fd = fopen(filepath, "rb");
 	if(!fd)
 	{
 		lua_pushstring(L, "ERROR: File not found");
 		return;
 	}
-	//Get file size
 	if(fstat(fileno(fd), &file_info) != 0)
 	{
 		lua_pushstring(L, "ERROR: File information unavailable");
 		return;
 	}
+	fclose(fd);
+
+	curl_formadd(&formpost, &lastptr, 
+					CURLFORM_COPYNAME, "file",
+					CURLFORM_FILE , filepath, 
+					CURLFORM_END);
 
 	curl = curl_easy_init();
-	if(curl){
-		/* upload to this place */ 
+	if(curl) {
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&output);
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 		curl_easy_setopt(curl, CURLOPT_URL, aUrl);
-		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-		curl_easy_setopt(curl, CURLOPT_READDATA, fd); //set where to read from (on Windows you need to use READFUNCTION too)
-		curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);//Give the size of the upload (optional)
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);//enable verbose for easier tracing
+		curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+		
 		result = curl_easy_perform(curl);
-		if(result == CURLE_OK) {
-			curl_easy_getinfo(curl, CURLINFO_SPEED_UPLOAD, &speed_upload);
-			curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
-			lua_pushstring(L, filepath);
+		
+		if(result == CURLE_OK)
+		{
+			if( output.buffer )
+			{
+				lua_pushstring(L, output.buffer);
+			}
 		}
 		else
 		{
 			lua_pushstring(L, curl_easy_strerror(result));
 		}
+		
 		curl_easy_cleanup(curl);
+		curl_formfree(formpost);
+		if(output.buffer)
+		{
+			free ( output.buffer );
+			output.buffer = 0;
+			output.size = 0;
+		}
 	}
 	else
 	{
@@ -450,18 +485,6 @@ static int uploadfile(lua_State *L){
 	}
 	return res;
 }
-
-
-/*
-int i;
-for(i = 0; i < paramCount; i = i + 2)
-{
-	printf("%s","\n");
-	printf("%s", parameters[i]);
-	printf("%s", " = ");
-	printf("%s", parameters[i + 1]);
-}
-*/
 
 
 int luaopen_shimclient(lua_State *L){

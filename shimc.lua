@@ -6,7 +6,6 @@ function file_exists(file)
 	if f then f:close() end
 	return f ~= nil
 end
-
 function lines_from(file)
 	if not file_exists(file) then return {} end
 	lines = {}
@@ -38,7 +37,8 @@ local save = "dcsv"
 local release = nil
 local stream = nil
 local n = 10
-local filepath = ""
+local filepath = "/media/data/gProjects/SciDB-lua/data.csv"
+
 
 print("\n", "-----------------------")
 print("\n", "TEST NO AUTHENTICATION")
@@ -50,6 +50,8 @@ print("\n", "Executing query...")
 print(executequery(sdburl, sid, query, save, release, stream))
 print("\n", "Reading lines...")
 print(readlines(sdburl, sid, n))
+print("\n", "Loading file...")
+print(uploadfile(sdburl, sid, filepath))
 print("\n", "Releasing session...")
 print(releasesession(sdburl, sid))
 
@@ -68,9 +70,12 @@ print("\n", "Executing query...")
 print(executequery(sdburls, sid, query, save, release, stream, auth))
 print("\n", "Reading lines...")
 print(readlines(sdburls, sid, n, auth))
+print("\n", "Loading file...")
+print(uploadfile(sdburls, sid, filepath, auth))
 print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
 print(logout(sdburls, auth))
 
---TODO: TEST cancel, read_bytes, upload_file
+--TODO: Test cancel, read_bytes, 
+--TODO: Write uploadfile for binaries
