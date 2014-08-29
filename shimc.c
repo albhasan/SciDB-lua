@@ -23,7 +23,6 @@ void buildUrl(const char *url, const char *operation, const char *parameters[], 
 	const char *query = "?";
 	const char *equal = "=";
 	const char *amp = "&";
-	//char result[10000];
 	char aOperation[100];
 	strcpy(result, url);
 	strcpy(aOperation, operation);
@@ -47,7 +46,21 @@ void buildUrl(const char *url, const char *operation, const char *parameters[], 
 				strncat(result, amp, sizeof(amp) / sizeof(amp[0]));
 		}
 	}
-	//return result;
+	/*
+	printf("%s", "\n§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§\n");
+	printf("%s", result);
+	printf("%s", "\n§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§\n");
+	*/
+	
+}
+
+
+
+//http://stackoverflow.com/a/1636827
+size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+	size_t written;
+	written = fwrite(ptr, size, nmemb, stream);
+	return written;
 }
 
 
@@ -71,6 +84,44 @@ static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *da
 		mem->buffer[ mem->size ] = 0;
 	}
 	return realsize;
+}
+
+
+
+void callOperationReadBytes(lua_State *L, const char *url, const char *filepath, const char *parameters[], int paramsize)
+{
+	curl_global_init(CURL_GLOBAL_ALL);
+	CURL * curl;
+	FILE *fp;
+	char aUrl[10000];
+	const char *operation = "/read_bytes";
+	buildUrl(url, operation, parameters, paramsize, aUrl);
+	curl = curl_easy_init();
+	if(curl){
+		CURLcode result;	
+		fp = fopen(filepath,"wb");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		curl_easy_setopt(curl, CURLOPT_URL, aUrl);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+		result = curl_easy_perform(curl);
+		if(result == CURLE_OK)
+		{
+			lua_pushstring(L, filepath);
+		}
+		else
+		{
+			lua_pushstring(L, curl_easy_strerror(result));
+		}
+		curl_easy_cleanup(curl);
+	}
+	else
+	{
+		lua_pushstring(L, "ERROR: CURL initialization failed");
+		return;
+	}
 }
 
 
@@ -403,35 +454,7 @@ static int readlines(lua_State *L){
 	return res;
 }
 
-static int readbytes(lua_State *L){ 
-	int res = 0;
-	int paramCount = 4;
-	const char *url = lua_tostring(L, 1);
-	const char *id = lua_tostring(L, 2);
-	const char *n = lua_tostring(L, 3);//maximum number of bytes to read and return between 0 and 2147483647
-	const char *auth = lua_tostring(L, 4);
 
-	if(url != NULL && id != NULL && n != NULL)
-	{
-		const char *parameters[6];
-		parameters[0] = "id";
-		parameters[1] = id;
-		parameters[2] = "n";
-		parameters[3] = n;
-		parameters[4] = NULL;
-		parameters[5] = NULL;
-		if(auth != NULL)
-		{
-			parameters[4] = "auth";
-			parameters[5] = auth;
-			paramCount = 6;
-
-		}
-		callOperation(L, url, "/read_bytes", parameters, paramCount);
-		res = 1;
-	}
-	return res;
-}
 
 static int cancel(lua_State *L){ 
 	int res = 0;
@@ -487,16 +510,52 @@ static int uploadfile(lua_State *L){
 }
 
 
+
+static int readbytes(lua_State *L){ 
+	int res = 0;
+	int paramCount = 4;
+	const char *url = lua_tostring(L, 1);
+	const char *id = lua_tostring(L, 2);
+	const char *n = lua_tostring(L, 3);//maximum number of bytes to read and return between 0 and 2147483647
+	const char *filepath = lua_tostring(L, 4);
+	const char *auth = lua_tostring(L, 5);
+	//char filepath[FILENAME_MAX] = "/tmp/bbb.txt";
+	
+	if(url != NULL && id != NULL && n != NULL && filepath != NULL)
+	{
+		const char *parameters[6];
+		parameters[0] = "id";
+		parameters[1] = id;
+		parameters[2] = "n";
+		parameters[3] = n;
+		parameters[4] = NULL;
+		parameters[5] = NULL;
+
+		if(auth != NULL)
+		{
+			parameters[4] = "auth";
+			parameters[5] = auth;
+			paramCount = 6;
+
+		}
+		callOperationReadBytes(L, url, filepath, parameters, paramCount);
+		res = 1;
+	}
+	return res;
+}
+
+
+
 int luaopen_shimclient(lua_State *L){
 	lua_register(L, "version", version);
-	lua_register(L,"newsession", newsession);
-	lua_register(L,"releasesession", releasesession);
-	lua_register(L,"executequery", executequery);
-	lua_register(L,"cancel", cancel);
-	lua_register(L,"readlines", readlines);
-	lua_register(L,"readbytes", readbytes);
-	lua_register(L,"uploadfile", uploadfile);
-	lua_register(L,"login", login);
-	lua_register(L,"logout", logout);
+	lua_register(L, "newsession", newsession);
+	lua_register(L, "releasesession", releasesession);
+	lua_register(L, "executequery", executequery);
+	lua_register(L, "cancel", cancel);
+	lua_register(L, "readlines", readlines);
+	lua_register(L, "readbytes", readbytes);
+	lua_register(L, "uploadfile", uploadfile);
+	lua_register(L, "login", login);
+	lua_register(L, "logout", logout);
 	return 0;
 }
