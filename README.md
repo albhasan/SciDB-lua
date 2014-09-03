@@ -9,8 +9,9 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
 <h3>PRE-REQUISITES</h3>
 
 <ul>
-	<li>A symbolic link at /usr/include/lua pointing to /usr/include/lua5.x</li>
-	<li>The file <code>/usr/include/curl/types.h</code> must be present. Otherwise, create it with the following content: <code>/* not used */</code></li>
+<li>Lua & lua development libraries <code>sudo apt-get install lua5.2 liblua5.2-dev</code></li>
+<li>A symbolic link at /usr/include/lua pointing pointing to /usr/include/lua5.x. For example: <code>ln -s /usr/include/lua5.2 /usr/include/lua</code></li>
+<li>The file <code>/usr/include/curl/types.h</code> must be present. Otherwise, create it with the following content: <code>/* not used */</code></li>
 </ul> 
 
 <h3>COMPILE</h3>
