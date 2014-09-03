@@ -166,7 +166,6 @@ print(executequery(sdburls, sid, query, save, release, stream, auth))
 print("\n", "Reading bytes...")
 n = 20
 print(readbytes(sdburls, sid, n, bfilepath, auth))
-
 print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")

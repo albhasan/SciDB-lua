@@ -1,7 +1,7 @@
 CC = gcc
-#gcc -Wall -shared -fPIC -o shimclient.so -I/usr/include/lua -llua shimc.c -lcurl -I.
+#gcc -Wall -shared -fPIC -o shimclient.so -I/usr/include/lua shimc.c -lcurl -I.
 CFLAGS1 = -Wall -shared -fPIC
-CFLAGS2 = -I/usr/include/lua -llua
+CFLAGS2 = -I/usr/include/lua
 CFLAGS3 = -lcurl -I.
 
 shimc: shimc.c
