@@ -47,7 +47,7 @@ local save = ""
 local release = nil
 local stream = nil
 local n = 0
-local filepath = "/media/data/gProjects/SciDB-lua/olympic_data.scidb"
+local filepath = "olympic_data.scidb"
 local filepathSciDB = "" -- File path on SciDB's server
 local bfilepath = "/tmp/fileDownloadedFromSciDB.txt"
 
