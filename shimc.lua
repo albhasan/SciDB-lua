@@ -106,10 +106,16 @@ print("\n", "Starting a new session...")
 sid = tonumber(newsession(sdburls, auth))--TODO: Really weird casting
 print("\n", sid)
 print("\n", "Creating destination array...")
+
+
+
 --****** COMMENT WHEN RUNNING FOR THE FIRST TIME
-query = urlencode("remove(winnersFlat)")
-print(executequery(sdburls, sid, query, nil, nil, nil, auth))
+--query = urlencode("remove(winnersFlat)")
+--print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 --******
+
+
+
 query = urlencode("CREATE ARRAY winnersFlat<event:string,year:int64,person:string,time:double>[i=0:*,1000000,0]")
 print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 print("\n", "Loading file...")
@@ -119,17 +125,29 @@ print("\n", "Loading data to array...")
 query = urlencode("load(winnersFlat, '" .. filepathSciDB:sub(1, filepathSciDB:len() -2) .. "')")
 print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 print("\n", "Creating redimensioned array...")
+
+
+
 --****** COMMENT WHEN RUNNING FOR THE FIRST TIME
-query = urlencode("remove(winners)")
-print(executequery(sdburls, sid, query, nil, nil, nil, auth))
+--query = urlencode("remove(winners)")
+--print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 --******
+
+
+
 query = urlencode("CREATE ARRAY winners <person:string, time:double>[year=1996:2008,1000,0, event_id=0:3,1000,0]")
 print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 print("\n", "Creating index array...")
+
+
+
 --****** COMMENT WHEN RUNNING FOR THE FIRST TIME
-query = urlencode("remove(event_index)")
-print(executequery(sdburls, sid, query, nil, nil, nil, auth))
+--query = urlencode("remove(event_index)")
+--print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 --******
+
+
+
 query = urlencode("CREATE ARRAY event_index <event:string>[event_id=0:*,10,0]")
 print(executequery(sdburls, sid, query, nil, nil, nil, auth))
 print("\n", "Redimensioning...")
