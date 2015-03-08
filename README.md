@@ -28,13 +28,12 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
   <li>Username</li>
   <li>Password</li>
   <ul>
-  Such a file would look like this
-  <code>
-http://mySciDB:8080
-https://mySciDB:8083
-scidb
-mySecretPassword
-  </code>
+  Such a file would look like this<br>
+  <code>http://mySciDB:8080</code>
+  <code>https://mySciDB:8083</code>
+  <code>scidb</code>
+  <code>mySecretPassword</code>
+
 <li>Run the following command to run the tests: <code>lua shimc.lua</code></li>
 </ul> 
 
