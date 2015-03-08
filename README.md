@@ -26,7 +26,7 @@ Create a text file called <code>conf.exe</code>. This text file must contain 4 l
   <li>URL of the dic shim interface</li>
   <li>Username</li>
   <li>Password</li>
-  <ul>
+  </ul>
   Such a file would look like this<br>
   <code>http://mySciDB:8080</code><br>
   <code>https://mySciDB:8083</code><br>
