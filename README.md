@@ -34,5 +34,5 @@ Create a text file called <code>conf.exe</code>. This text file must contain 4 l
   <code>mySecretPassword</code><br>
   <br>
 
-Run the following command to run the tests: <code>lua shimc.lua</code>
+Run the following command to execute the tests: <code>lua shimc.lua</code>
 
