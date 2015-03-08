@@ -20,8 +20,7 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
 
 <h3>USE</h3>
 
-<ul>
-<li>Create a text file called <code>conf.exe</code>. This text file must contain 4 lines:</li>
+Create a text file called <code>conf.exe</code>. This text file must contain 4 lines:
   <ul>
   <li>URL of the public shim interface</li>
   <li>URL of the dic shim interface</li>
@@ -33,7 +32,7 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
   <code>https://mySciDB:8083</code><br>
   <code>scidb</code><br>
   <code>mySecretPassword</code><br>
+  <br>
 
-<li>Run the following command to run the tests: <code>lua shimc.lua</code></li>
-</ul> 
+Run the following command to run the tests: <code>lua shimc.lua</code>
 
