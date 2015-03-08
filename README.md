@@ -19,8 +19,8 @@ Tutorial on libcurl <a href="http://curl.haxx.se/libcurl/c/libcurl-tutorial.html
 <code>gcc -Wall -shared -fPIC -o shimclient.so -I/usr/include/lua  shimc.c -lcurl -I.</code>
 
 <h3>USE</h3>
-
-Create a text file called <code>conf.exe</code>. This text file must contain 4 lines:
+<ul>
+<li>Create a text file called <code>conf.exe</code>. This text file must contain 4 lines:
   <ul>
   <li>URL of the public shim interface</li>
   <li>URL of the dic shim interface</li>
@@ -32,7 +32,15 @@ Create a text file called <code>conf.exe</code>. This text file must contain 4 l
   <code>https://mySciDB:8083</code><br>
   <code>scidb</code><br>
   <code>mySecretPassword</code><br>
-  <br>
+</li>
 
-Run the following command to execute the tests: <code>lua shimc.lua</code>
+<li>Make sure the following arrays do not exist on the datatbase:</li>
+  <ul>
+  <li><code>iquery -aq "remove(winners)"</code></li>
+  <li><code>iquery -aq "remove(winnersFlat)"</code></li>
+  <li><code>iquery -aq "remove(event_index)"</code></li>
+  </ul>
+
+<li>Run the following command to execute the tests: <code>lua shimc.lua</code></li>
+</ul>
 
