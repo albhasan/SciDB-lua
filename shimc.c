@@ -93,7 +93,7 @@ void callOperationReadBytes(lua_State *L, const char *url, const char *filepath,
 	curl_global_init(CURL_GLOBAL_ALL);
 	CURL * curl;
 	FILE *fp;
-	char aUrl[10000];
+	char aUrl[1000000];
 	const char *operation = "/read_bytes";
 	buildUrl(url, operation, parameters, paramsize, aUrl);
 	curl = curl_easy_init();

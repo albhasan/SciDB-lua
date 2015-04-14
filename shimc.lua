@@ -1,29 +1,8 @@
 #!/usr/bin/lua
 require("shimclient")
+require("util")
 
 
-function urlencode(str)
-	if (str) then
-		str = string.gsub (str, "\n", "\r\n")
-		str = string.gsub (str, "([^%w ])",
-		function (c) return string.format ("%%%02X", string.byte(c)) end)
-		str = string.gsub (str, " ", "+")
-	end
-	return str
-end
-function file_exists(file)
-	local f = io.open(file, "rb")
-	if f then f:close() end
-	return f ~= nil
-end
-function lines_from(file)
-	if not file_exists(file) then return {} end
-	lines = {}
-	for line in io.lines(file) do 
-		lines[#lines + 1] = line
-	end
-	return lines
-end
 
 --Read conf file
 local file = 'conf.exe' --Text file containing the URL, SSL URL, user and password like this (without the comment marks):
@@ -52,8 +31,7 @@ local filepathSciDB = "" -- File path on SciDB's server
 local bfilepath = "/tmp/fileDownloadedFromSciDB.txt"
 
 
---[[
-]]
+
 print("\n", "-----------------------")
 print("\n", "TEST - NO AUTHENTICATION")
 print("\n", "-----------------------")
@@ -87,7 +65,9 @@ print("\n", "Executing query...")
 print(executequery(sdburls, sid, query, save, release, stream, auth))
 print("\n", "Reading lines...")
 n = 10
-print(readlines(sdburls, sid, n, auth))
+res = readlines(sdburls, sid, n, auth)
+print(res)
+--print(readlines(sdburls, sid, n, auth))
 print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
@@ -161,6 +141,15 @@ print(executequery(sdburls, sid, query, save, release, stream, auth))
 print("\n", "Reading lines...")
 n = 0
 print(readlines(sdburls, sid, n, auth))
+
+
+print("\n", "-----------------------ALBER---------------------------")
+res = readlines(sdburls, sid, n, auth)
+print("\n", res)
+print("\n", "-----------------------")
+
+
+
 print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
@@ -188,8 +177,6 @@ print("\n", "Releasing session...")
 print(releasesession(sdburls, sid,auth))
 print("\n", "Loggin out...")
 print(logout(sdburls, auth))
---[[
-]]
 
 
 --TODO: Test cancel 
