@@ -16,12 +16,36 @@ end
 
 function lines_from(file)
 	if not file_exists(file) then return {} end
-	lines = {}
+	local lines = {}
 	for line in io.lines(file) do 
 		lines[#lines + 1] = line
 	end
 	return lines
 end
+
+
+
+-- Takes a CSV and returns a lua table
+function csv2table(str)
+	local res = {}
+	local header = split(trim(str), "\n")[1]
+	local body = trim(string.sub(str, string.len(header) + 1))
+	local th = split(header, ",")
+	local tb = fromCSV(string.gsub(body, "\n", ","))
+	local row = {}
+	for i = 1, #tb, 1 do
+		local index = (i % #th)
+		if(index ~= 0) then
+			row[th[index]] = tb[i]
+		else
+			row[th[#th]] = tb[i]
+			table.insert(res, row)
+			row = {}
+		end
+	end
+	return res
+end
+
 
 
 -- remove trailing and leading whitespace from string.
@@ -32,24 +56,29 @@ function trim(s)
 end
 
 
---Print table values
-function printTable(t)
-	for i, v in ipairs(t) do print(i, v) end
-end
+--#########################################################################
+-- Print tables
+--#########################################################################
 
 
--- Taken from http://stackoverflow.com/questions/11886277/lua-iterating-nested-table
-function DeepPrint (e)
+-- Adapted from http://stackoverflow.com/questions/11886277/lua-iterating-nested-table
+function DeepPrint (e, prefix)
+	prefix = prefix or "\t"
     -- if e is a table, we should iterate over its elements
     if type(e) == "table" then
         for k,v in pairs(e) do -- for every element in the table
-            print(k, "=")
-            DeepPrint(v)       -- recursively repeat the same procedure
+			if type(v) == "table" then
+				print(prefix, tostring(k), " = ")
+				DeepPrint(v, prefix .. prefix)       -- recursively repeat the same procedure
+			else
+				print(prefix, tostring(k) .. "=" .. tostring(v))
+			end
         end
     else -- if not, we can just print it
-        print(e)
+        print(tostring(e))
     end
 end
+
 
 --#########################################################################
 -- CSV parsing
@@ -122,3 +151,4 @@ function fromCSV (s)
 	until fieldstart > string.len(s)
 	return t
 end
+
